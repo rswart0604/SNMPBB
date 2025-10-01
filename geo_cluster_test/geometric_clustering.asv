@@ -1,13 +1,11 @@
 clear;clc
-X = load('four_quadrants.data'); 
-r = 4;
+X = load('new_graph.data'); 
+r = 3;
 
-% gnd = [ones(60,1); 2*ones(140,1); 3*ones(100,1)]; k =15;  % 300_bullseye.data, knn = 15
-% gnd = [ones(3000,1); 2*ones(3000,1); 3*ones(3000,1)]; k = 100;  % 9000_bullseye.data, knn = 100
-% gnd = [ones(500,1); 2*ones(500,1); 3*ones(500,1)]; k = 40;  % 1500_bullseye.data, knn = 40
-% gnd = [ones(1000,1); 2*ones(1000,1); 3*ones(1000,1)]; k = 80;  % 3000_bullseye.data, knn = 80
-gnd = [ones(75,1); 2*ones(75,1); 3*ones(75,1); 4*ones(75,1)]; k=40;  % four_quadrants.data
-
+% gnd = [ones(60,1); 2*ones(140,1); 3*ones(100,1)]; k =15;  % graph.data, knn = 15
+% gnd = [ones(3000,1); 2*ones(3000,1); 3*ones(3000,1)]; k = 100;  % new_graph2.data, knn = 100
+gnd = [ones(500,1); 2*ones(500,1); 3*ones(500,1)]; k = 40;  % new_graph.data, knn = 40
+% gnd = [ones(1000,1); 2*ones(1000,1); 3*ones(1000,1)]; k = 80;  % new_graph3.data, knn = 80
 
 num_runs = 10;
 
@@ -120,7 +118,7 @@ for x = 1:num_runs
     acc_pgd_all(x,:) = interpolate_with_clipping(time_pgd{x}, acc_pgd_raw{x}, t_grid);
 end
 
-plot_time_limit = 1.65; % Show only first 30 seconds (adjust as needed)
+plot_time_limit = 10; % Show only first 30 seconds (adjust as needed)
 
 % Find the indices corresponding to the time limit
 if plot_time_limit > 0
@@ -154,7 +152,7 @@ lgd.FontSize = 16;
 lgd.Interpreter = 'latex';
 % print('plots/300_bullseye_mean','-dpng')
 export_matrix = [t_plot; gsnmpbb_data; snmpbb_data; anls_data; pgd_data; newton_data]';
-writematrix(export_matrix, 'data/quadrants.csv');
+writematrix(export_matrix, 'data/1500_bullseye.csv');
 
 
 % Helper function to clean time/accuracy data
