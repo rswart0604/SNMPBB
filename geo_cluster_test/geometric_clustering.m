@@ -1,12 +1,12 @@
 clear;clc
-X = load('four_quadrants.data'); 
-r = 4;
+X = load('3000_bullseye.data'); 
+r = 3;
 
 % gnd = [ones(60,1); 2*ones(140,1); 3*ones(100,1)]; k =15;  % 300_bullseye.data, knn = 15
 % gnd = [ones(3000,1); 2*ones(3000,1); 3*ones(3000,1)]; k = 100;  % 9000_bullseye.data, knn = 100
 % gnd = [ones(500,1); 2*ones(500,1); 3*ones(500,1)]; k = 40;  % 1500_bullseye.data, knn = 40
 % gnd = [ones(1000,1); 2*ones(1000,1); 3*ones(1000,1)]; k = 80;  % 3000_bullseye.data, knn = 80
-gnd = [ones(75,1); 2*ones(75,1); 3*ones(75,1); 4*ones(75,1)]; k=40;  % four_quadrants.data
+% gnd = [ones(75,1); 2*ones(75,1); 3*ones(75,1); 4*ones(75,1)]; k=40;  % four_quadrants.data
 
 
 num_runs = 10;

@@ -45,7 +45,8 @@ end
 
 % Main loop
 iter = 0;
-while iter <= maxiter 
+init_tic = tic;
+while iter <= maxiter && toc(init_tic) < 10
     qqqq = tic;
     
     UU = U'*U;

@@ -95,7 +95,7 @@ for iter = 1:maxiter
     projnorm_idx = gradH<=eps | H>eps;
     projnorm = norm(gradH(projnorm_idx));
     
-    if projnorm < tol * initgrad || toc(start_tic) > 100
+    if projnorm < tol * initgrad || toc(start_tic) > 10
         if debug, fprintf('final grad norm %g\n', projnorm); end
         break;
     else
