@@ -5,10 +5,29 @@
 % k = 3;
 % plot_name = "orl_mean";
 
-% load("COIL20.mat")
+% load("Reuters21578.mat");
+% load("TDT2_all.mat");
 % r = 20;
-% gnd = Y;
-% k = 12;
+% X = fea;
+% [clusterLabels, ~, idx] = unique(gnd);
+% % get the top 20 clusters for these two datasets
+% clusterSizes = accumarray(idx, 1);
+% [~, sortIdx] = sort(clusterSizes, 'descend');
+% top20_labels = clusterLabels(sortIdx(1:20));
+% mask = ismember(gnd, top20_labels);
+% X = X(mask, :);
+% % X = bsxfun(@rdivide, X, sqrt(sum(X.^2,2)) + eps);
+% % [U,S,~] = svds(X, r);
+% % A_dense = U * S * U';
+% % X = max(X, 0);
+% gnd = gnd(mask);
+% [~, ~, gnd] = unique(gnd);
+
+
+load("COIL20.mat")
+r = 20;
+gnd = Y;
+k = 12;
 % plot_name = "coil20_mean";
 
 % load("Isolet1.mat")
@@ -17,13 +36,13 @@
 % k = 40;
 % plot_name = "isolet1_mean";
 
-load("2k2k.mat")
-X = fea;
-r = 10;
-k = 42;
+% load("2k2k.mat")
+% X2 = fea;
+% r = 10;
+% k = 42;
 % plot_name = "2k2k_mean";
 
-num_runs = 10;
+num_runs = 3;
 
 % storage for accuracy curves
 time_symcluster1 = cell(num_runs,1);
@@ -39,6 +58,7 @@ acc_symcluster4_raw = cell(num_runs,1);
 [m,~] = size(X);
 
 for x = 1:num_runs
+    tic;
     W0 = 2 * full(sqrt(mean(mean(X)) / r)) * rand(m, r);
     H0 = 2 * full(sqrt(mean(mean(X)) / r)) * rand(r,m);    
     params.truelabel = gnd;
@@ -51,19 +71,21 @@ for x = 1:num_runs
     [H_symcluster2,output_symcluster2,acc_symcluster2] = symnmf_cluster(X,r,params);
     params.alg = 'pgd';
     [H_symcluster3,output_symcluster3,acc_symcluster3] = symnmf_cluster(X,r,params);
-    % params.alg = 'newton';
-    % [H_symcluster4,output_symcluster4,acc_symcluster4] = symnmf_cluster(X,r,params);
+    params.alg = 'modified_pgd';
+    [H_symcluster4,output_symcluster4,acc_symcluster4] = symnmf_cluster(X,r,params);
     
     [time_symcluster1{x}, acc_symcluster1_raw{x}] = clean_time_acc(output_symcluster1.total_time(:), acc_symcluster1(:));
     [time_symcluster2{x}, acc_symcluster2_raw{x}] = clean_time_acc(output_symcluster2.total_time(:), acc_symcluster2(:));
     [time_symcluster3{x}, acc_symcluster3_raw{x}] = clean_time_acc(output_symcluster3.total_time(:), acc_symcluster3(:));
-    % [time_symcluster4{x}, acc_symcluster4_raw{x}] = clean_time_acc(output_symcluster4.total_time(:), acc_symcluster4(:));
+    [time_symcluster4{x}, acc_symcluster4_raw{x}] = clean_time_acc(output_symcluster4.total_time(:), acc_symcluster4(:));
+    % disp(x);
+    toc;
 end
 
 % Find the maximum time across all methods and runs
 max_time = 0;
 for x = 1:num_runs
-    max_time = max(max_time, max([time_symcluster1{x}; time_symcluster2{x}; time_symcluster3{x}]));
+    max_time = max(max_time, max([time_symcluster1{x}; time_symcluster2{x}; time_symcluster3{x}; time_symcluster4{x}]));
 end
 
 % Use a common time grid
@@ -76,25 +98,14 @@ acc_symcluster3_all = zeros(num_runs, length(t_grid));
 
 % Interpolation for each run with proper clipping
 for x = 1:num_runs
-    % Graph SNMPBB
-    
-    % ANLS
-    % acc_anls_all(x,:) = interpolate_with_clipping(time_anls{x}, acc_anls_raw{x}, t_grid);
-    
-    % Newton
-    % acc_newton_all(x,:) = interpolate_with_clipping(time_newton{x}, acc_newton_raw{x}, t_grid);
-        
-    % PGD
-    % acc_pgd_all(x,:) = interpolate_with_clipping(time_pgd{x}, acc_pgd_raw{x}, t_grid);
-    
-    % Symcluster variants
     acc_symcluster1_all(x,:) = interpolate_with_clipping(time_symcluster1{x}, acc_symcluster1_raw{x}, t_grid);
     acc_symcluster2_all(x,:) = interpolate_with_clipping(time_symcluster2{x}, acc_symcluster2_raw{x}, t_grid);
     acc_symcluster3_all(x,:) = interpolate_with_clipping(time_symcluster3{x}, acc_symcluster3_raw{x}, t_grid);
+    acc_symcluster4_all(x,:) = interpolate_with_clipping(time_symcluster4{x}, acc_symcluster4_raw{x}, t_grid);
 end
 
 % Add this parameter to control plot time range (in seconds)
-plot_time_limit = 3; % Show only first 30 seconds (adjust as needed)
+plot_time_limit = 4; % Show only first n seconds (adjust as needed)
 
 % Find the indices corresponding to the time limit
 if plot_time_limit > 0
@@ -110,24 +121,34 @@ figure; hold on
 snmpbb_data = mean(acc_symcluster1_all(:,time_idx),1);
 anls_data = mean(acc_symcluster2_all(:,time_idx),1);
 pgd_data = mean(acc_symcluster3_all(:,time_idx),1);
+modified_pgd_data = mean(acc_symcluster4_all(:,time_idx),1);
 plot(t_plot, snmpbb_data,'LineWidth',2)
 plot(t_plot, anls_data,'LineWidth',2)
 plot(t_plot, pgd_data,'LineWidth',2)
+plot(t_plot, modified_pgd_data,'LineWidth',2)
 ax = gca;
 ax.FontSize = 14;
 ax.TickLabelInterpreter = 'latex';
 xlabel('$\textnormal{Time (s)}$', 'Interpreter', 'Latex', 'Fontsize', 20);
 ylabel('$\textnormal{Accuracy}$', 'Interpreter', 'Latex', 'Fontsize', 20);
 lgd = legend("Graph SNMPBB","ANLS",...
-    "PGD",'Location','best');
+    "PGD","PGD modified",'Location','best');
 lgd.FontSize = 16;
 lgd.Interpreter = 'latex';
 % Optional: Set x-axis limits explicitly
 if plot_time_limit > 0
     xlim([0, plot_time_limit]);
 end
-export_matrix = [t_plot; snmpbb_data; anls_data; pgd_data]';
-writematrix(export_matrix, 'data/2k2k.csv');
+export_matrix = [t_plot; snmpbb_data; anls_data; pgd_data; modified_pgd_data]';
+% writematrix(export_matrix, 'data/reuters.csv');
+
+
+
+
+
+
+
+
 
 
 % Helper function to clean time/accuracy data

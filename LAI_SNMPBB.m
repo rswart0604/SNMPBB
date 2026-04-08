@@ -56,6 +56,10 @@ sym_weight = ((m/10)/(log(r)/log(5)))/10;
 p=0;
 q=0;
 
+ITER_MAX=1000;      % maximum inner iteration number (Default)
+ITER_MIN=1;         % minimum inner iteration number (Default)
+
+
 % Read optional parameters
 if (rem(length(varargin),2)==1)
     error('Optional parameters should always go by pairs');
@@ -64,6 +68,7 @@ else
         switch upper(varargin{i})
             case 'MAX_ITER',    MaxIter=varargin{i+1};
             case 'MIN_ITER',    MinIter=varargin{i+1};
+            case 'INNER_MAX_ITER', ITER_MAX=varargin{i+1};
             case 'MAX_TIME',    MaxTime=varargin{i+1};
             case 'W_INIT',      W0=varargin{i+1};
             case 'H_INIT',      H0=varargin{i+1};
@@ -79,8 +84,6 @@ else
     end
 end
 
-ITER_MAX=1000;      % maximum inner iteration number (Default)
-ITER_MIN=1;         % minimum inner iteration number (Default)
 
 % Initialization
 W=W0; H=H0;
@@ -125,7 +128,7 @@ output.relres_time(1) = toc(qqq);
 output.time(1) = first_time;
 output.pgn(1) = init_delta;
 
-
+% MaxIter = 3;
 
 for iter=1:MaxIter,   
     qqqq = tic;
@@ -152,6 +155,7 @@ for iter=1:MaxIter,
     if iterH<=ITER_MIN
         tolH=tolH/10;
     end
+    disp("==");
 
     delta = norm([GradW(GradW<0 | W>0); GradH(GradH<0 | H>0)]);
     
@@ -173,10 +177,10 @@ for iter=1:MaxIter,
             break
         end
     end
-    if (delta<=tol*init_delta && iter >= MinIter) || output.time(end)>=MaxTime,
-        disp("breaking!!!");
-        % break;
-    end 
+    % if (delta<=tol*init_delta && iter >= MinIter) || output.time(end)>=MaxTime,
+    %     % disp("breaking!!!");
+    %     break;
+    % end 
     if delta <= 200*init_delta
         sym_weight = 2*sym_weight;
     end
@@ -190,7 +194,7 @@ end
 function [x,iter,gradx] = SNMPBB(x0,WtW,WtV,iterMax,iter_Min,tol)
 
 s = 1.7;    % relaxation factor
-eta = 0.75;
+eta = 0.25;
 
 mm=5;       %mm nonmonotone line search parameter
 lamax=10^20; lamin=10^-20;
@@ -205,13 +209,16 @@ fn = f0;
 lambda=1;
 
 L = 1/norm(full(WtW));    % Lipschitz constant
+% disp(L);
 gradx = WtW*x - WtV;      % Gradient
 for iter=1:iterMax,
 
     % Stopping criteria
     if iter>=iter_Min,
-        pgn = norm(gradx(gradx < 0 | x > 0));
+        mask = gradx < 0 | x > 0;
+        pgn = norm(gradx(mask),'fro');
         if pgn<=tol,
+            disp(iter);
             break;
         end
     end
@@ -232,6 +239,9 @@ for iter=1:iterMax,
     else
         S(iter) = fn + eta*(S(iter-1)-fn);
     end
+    % if iter < 10
+    %     S(iter) = fn;   % disable nonmonotonicity early
+    % end
     
     dx = max(x - lambda.*gradx, 0)-x;
     dgradx = WtW*dx;
@@ -243,11 +253,16 @@ for iter=1:iterMax,
         % Use Backtracking Line Search
         alpha=rho*alpha;
         fn = func(iter)+alpha*delta+0.5*alpha^2*dQd;
+        if alpha == 0
+            break
+        end
     end
+    alpha = max(alpha, 1e-30);
     x = x+s.*alpha.*dx;  % say Wt = Zt + alpha*dx
         
     % Compute the BB steplength 
     sty = dQd;
+    % disp(sty);
     gradx = gradx + alpha.*dgradx;
     if sty > 0
         sts = dx(:)'*dx(:);

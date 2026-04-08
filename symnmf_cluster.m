@@ -22,6 +22,9 @@ if ~isfield(options,'Hinit'),           options.Hinit = []; end
 if ~isfield(options,'Winit'),           options.Winit = []; end
 if ~isfield(options,'alg'),             options.alg = 'anls'; end
 if ~isfield(options,'truelabel'),       options.truelabel = []; end
+if ~isfield(options,'second_descent_step'),       options.second_descent_step = true; end
+if ~isfield(options,'bb'),       options.bb = true; end
+if ~isfield(options,'nonmonotone'),       options.nonmonotone = true; end
 
 % === Build similarity matrix A ===
 init_tic = tic;
@@ -73,10 +76,40 @@ for i = 1:options.rep
     if strcmp(options.alg,'newton')
         [H, output, acc] = symnmf_newton(A, k, params);
     elseif strcmp(options.alg,'graph_snmpbb')
-        sym_weight = 0.1;
-        graph_reg = 1;
-        [H,~,output,acc] = Graph_SNMPBB(A,k,'truelabel',params.truelabel,'do_preprocess',false,...
-            'sym_weight',sym_weight,'graph_reg',graph_reg,'W_INIT',params.Hinit,'H_INIT',params.Winit);
+        % for orl
+        % sym_weight = 0.06;
+        % graph_reg = 1.3;
+
+        % for everything else
+        sym_weight = 10;
+        graph_reg = 3;
+
+        % sym_weight = 0.05;
+        % graph_reg = 1.2;
+
+        % sym_weight = 0.09;
+        % graph_reg = 1.1;
+
+        % sym_weight = 0.07;
+        % graph_reg = 1.3;
+        if ~isempty(options.Hinit)
+            [H,~,output,acc] = Graph_SNMPBB(A,k,'truelabel',params.truelabel,'do_preprocess',false,...
+                'sym_weight',sym_weight,'graph_reg',graph_reg,'W_INIT',params.Hinit,'H_INIT',params.Winit);
+        else
+            [H,~,output,acc] = Graph_SNMPBB(A,k,'truelabel',params.truelabel,'do_preprocess',false);
+        end
+
+    elseif strcmp(options.alg,'modified_graph_snmpbb')
+        % sym_weight = 0.3;
+        % graph_reg = .5;
+        [H,~,output,acc] = Graph_SNMPBB_modified(A,k,'truelabel',params.truelabel,'do_preprocess',false, ...
+            'W_INIT',params.Hinit,'H_INIT',params.Winit, ...
+            'do_preprocess', false,'second_descent_step',options.second_descent_step, 'bb', options.bb, ...
+            'nonmonotone', options.nonmonotone);
+
+    elseif strcmp(options.alg,'modified_pgd')
+        % use the higher scaling
+        [H,output,acc] = PGD_modified(A,k,'TRUELABEL',params.truelabel,'U_INIT',params.Winit');
     elseif strcmp(options.alg,'pgd')
         [H,output,acc] = PGD(A,k,'TRUELABEL',params.truelabel,'U_INIT',params.Winit');
     else

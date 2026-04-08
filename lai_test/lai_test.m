@@ -1,7 +1,7 @@
 clear; clc;
 
-m_vals = [100, 500, 1000, 5000];
-r_vals = [8,16,32,64];
+m_vals = [5000];
+r_vals = [5000,120];
 num_runs = 3;
 
 
@@ -14,10 +14,29 @@ for i_=1:numel(m_vals)
         for i = 1:num_runs
             W_old = max(0, randn(m, r));
             V = W_old * W_old';
-            [~, ~, output1] = LAI_SNMPBB(V, r,'p',2,'do_AQB',true,'verbose',1,'tol',1e-2);
-            [~,output2,~] = LAI_SymPGNCG(V,r,'p',2,'do_AQB',true,'tol',1e-8);
+            sym_weight = max(V(:))*1e-3;
+            [~, ~, output1] = LAI_SNMPBB(V, 100,'sym_weight',sym_weight,'p',2,'do_AQB',true,'verbose',1,'tol',1e-8);
+            [~,output2,~] = LAI_SymPGNCG(V,100,'p',2,'do_AQB',true,'tol',1e-8);
             outputs_list_ours{i_,j_}{i} = output1;
             outputs_list_theirs{i_,j_}{i} = output2;
+
+
+            fo1 = output1.relres(output1.relres ~= 0);
+            fo2 = output2.relres(output2.relres ~= 0);
+        
+            total_res_alg1{i} = fo1;
+            total_time_alg1{i} = output1.total_time(1:length(fo1));
+            total_res_alg2{i} = fo2;
+            bar = cumsum(output2.time);
+            total_time_alg2{i} = bar(1:length(fo2));
+        
+            if true
+                clf;
+                plot(total_time_alg1{i}, total_res_alg1{i}); hold on;
+                plot(total_time_alg2{i}, total_res_alg2{i});
+                disp("foo");
+            end
+
         end
 
     end

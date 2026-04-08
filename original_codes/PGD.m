@@ -16,14 +16,14 @@ if nargin >= 4
 end
 
 % Main loop
-%stepsize = 0.02;
+stepsize = 0.02;
 while iter <= maxiter 
     %---one column by one column update----- 
     
     %losses(iter+1)=norm(X-U*U', 'fro')^2 ;
     
-    step=1/(norm(X-U*U')+2*norm(U'*U))
-    %step = stepsize;
+    % step=1/(norm(X-U*U')+2*norm(U'*U))
+    step = stepsize;
     U=max(U-step*(U*U'*U-X*U),0);
 %     grad = (U*U'- X)*U;
 %     if norm(grad,'fro')>1

@@ -21,7 +21,12 @@ function [H, output, acc] = symnmf_newton(A, k, params)
 %       Hinit, maxiter, tol, sigma, beta, computeobj, debug
 %
 
-%% --- Input Checks ---
+if isfield(params, 'scaling')
+    use_scaling = params.scaling;
+else
+    use_scaling = true;  % default: use Newton-like scaling
+end
+
 n = size(A, 1);
 if n ~= size(A, 2)
     error('A must be a symmetric matrix!');
@@ -95,8 +100,9 @@ for iter = 1:maxiter
     projnorm_idx = gradH<=eps | H>eps;
     projnorm = norm(gradH(projnorm_idx));
     
-    if projnorm < tol * initgrad || toc(start_tic) > 10
+    if (projnorm < tol * initgrad && iter > 100) || toc(start_tic) > 10
         if debug, fprintf('final grad norm %g\n', projnorm); end
+        disp("hey");
         break;
     else
         if debug > 1, fprintf('iter %d: grad norm %g\n', iter, projnorm); end
@@ -111,8 +117,15 @@ for iter = 1:maxiter
     
     for i = 1:k
         if ~isempty(find(projnorm_idx_prev(:, i) ~= projnorm_idx(:, i), 1))
-            hessian_i = hessian_blkdiag(temp, H, i, projnorm_idx);
-            [R{i}, p(i)] = chol(hessian_i);
+            if use_scaling
+                alpha_newton = 1;
+                hessian_i = hessian_blkdiag(temp, H, i, projnorm_idx);
+                [R{i}, p(i)] = chol(hessian_i);
+            else
+                alpha_newton = .001;
+                R{i} = eye(sum(projnorm_idx(:, i)))
+                p(i) = 0;
+            end
         end
         if p(i) > 0
             step(:, i) = gradH(:, i);
@@ -132,14 +145,13 @@ for iter = 1:maxiter
     end
     
     % Armijo rule
-    alpha_newton = 1;
     while true
         Hn = max(H - alpha_newton * step, 0);
         left = Hn'*Hn;
         newobj = norm(A, 'fro')^2 - 2 * trace(Hn' * (A*Hn)) + trace(left * left);
-        if newobj - obj <= sigma * sum(sum(gradH .* (Hn-H)))
+        if newobj - obj <= sigma * sum(sum(gradH .* (Hn-H))) && max(Hn(:)) > 0
             H = Hn;
-            obj = newobj;
+            obj = newobj
             break;
         else
             alpha_newton = alpha_newton * beta;

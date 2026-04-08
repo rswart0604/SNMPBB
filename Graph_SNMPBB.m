@@ -23,7 +23,7 @@ start_tic = tic;
 % ---------------- Default settings ----------------
 MaxIter = 3000;
 MinIter = 500;
-MaxTime = 100000;
+MaxTime = 30;
 tol = 1e-7;
 verbose = 0;
 % sym_weight = mean(V(:).^2) * .0001
@@ -84,28 +84,28 @@ end
 if do_preprocess
     % compute pairwise distances (m x m)
     distances = pdist2(V, V, 'euclidean');
-    
+
     % default sigma if not provided
     if ~exist('sigma','var')
         sigma = 35;
     end
     % For k-nearest neighbor graph, zero out entries not among the k-nearest neighbors:
-    
+
     % k = 3 for ORL right now gives 78 accuracy?
     % k = 12 for COIL20 is best
     % k = 42 for MNIST train is best
     % k = 40 for Isolet1 is best
-    
+
     % kk = floor(log2(m)) + 1;
     % D = dist2(V,V);
     % V_ = scale_dist3_knn(D, 7, kk, true);
 
     sigma = mean(distances(:))*40;
     % sigma = 35;
-    
-    
+
+
     W = exp(- distances.^2 / (2*sigma^2));
-    
+
     k = num_knn;  % choose appropriate k
     for i = 1:m
         [~, idx] = sort(distances(i, :), 'ascend');
@@ -114,7 +114,7 @@ if do_preprocess
         mask(neighbors) = false;
         W(i, mask) = 0;
     end
-    
+
     % Symmetrize affinity
     A = (W + W') / 2;
 else
@@ -128,6 +128,7 @@ L = sparse(L);
 
 
 % inner solver parameters
+% ITER_MAX = 500;
 ITER_MAX = 1000;
 ITER_MIN = 1;
 
@@ -187,13 +188,13 @@ W = W';
 % ---------------- Main loop ----------------
 for iter = 1:MaxIter
     iter_tic = tic;
-    
+
     % --- Update W (passed as r x m matrix into SNMPBB_) ---
     HHt = H * H' + sym_weight * eye(r);            % r x r
     HVt = (V * H' + sym_weight * H')';             % r x m
     [W, iterW, GradW] = SNMPBB_(W, HHt, HVt, ITER_MAX, ITER_MIN, tolW, V, 0, []); 
     if iterW <= ITER_MIN, tolW = tolW / 10; end
-    
+
     % --- Update H (H is r x n) with graph regularization ---
     WtW = W * W' + sym_weight * eye(r);            % r x r (since W is r x m)
     WtV = (V * W' + sym_weight * W')';             % r x n
@@ -202,10 +203,10 @@ for iter = 1:MaxIter
 
     % compute projected gradient measure and histories
     delta = norm([GradW(GradW < 0 | W > 0); GradH(GradH < 0 | H > 0)]);
-        
+
     % compute time for iteration excluding clustering measurement
     t_hist(end+1) = toc(iter_tic);
-    
+
     measure_tic = tic;
     % clustering accuracy (if provided) and record time used to compute it
     if ~isempty(truelabel)
@@ -218,7 +219,7 @@ for iter = 1:MaxIter
     cres = efficient_GetRes(normX,V,H',H','XH',XH);
     e_hist(end+1) = cres;
     relres_time_hist(end+1) = toc(measure_tic);
-    
+
     % stopping criteria
     if (delta <= tol * init_delta && iter >= MinIter) || t_hist(end) >= MaxTime
         break;
@@ -229,7 +230,7 @@ for iter = 1:MaxIter
             break;
         end
     end
-    
+
     % optionally print
     if verbose == 2 && rem(iter,10) == 0
         fprintf('%d:\tstopping criteria = %e,\tobjective value = %e.\n', iter, delta/init_delta, e_hist(end) + constV);
@@ -252,29 +253,26 @@ if isempty(acc), acc = 0; end
 
 % ---------------- Nested function: SNMPBB_ (unchanged, but local) ----------------
 function [x, iter, gradx] = SNMPBB_(x0, WtW, WtV, iterMax, iter_Min, tol, V_in, graph_reg_local, L_local)
-    % SNMPBB: Quadratic regularization projected Barzilai--Borwein method for NNLS:
+    % SNMPBB: Quadratic regularization projected Barzilai--Borwein method:
     %   min 1/2 * <x, WtW*x> - <x, WtV> + (graph_reg/2) tr(x*L*x') subject to x>=0
     s = 1.5;
     eta = 0.75;
     lamax = 1e5; lamin = 1e-20;
     gamma = 1e-4;
     rho = 0.25;
-    
+
     x = x0;
     delta0 = -sum(sum(x .* WtV));
     dQd0 = sum(sum((WtW * x) .* x));
     fn = delta0 + 0.5 * dQd0;
     lambda_bb = 1;
-    
-    % Lipschitz estimate (safe)
+
     Lipschitz = 1 / max(eps, norm(full(WtW)));
     gradx = WtW * x - WtV;
     if graph_reg_local > 0
-        % note: x * L_local makes sense when x is r x n and L_local is n x n,
-        % or when x is r x m and L_local is m x m depending on the call.
         gradx = gradx + 2 * graph_reg_local * (x * L_local);
     end
-    
+
     for iter = 1:iterMax
         if iter >= iter_Min
             pgn = norm(gradx(gradx < 0 | x > 0));
@@ -282,7 +280,7 @@ function [x, iter, gradx] = SNMPBB_(x0, WtW, WtV, iterMax, iter_Min, tol, V_in, 
                 break;
             end
         end
-        
+
         % take a Lipschitz step
         dx = max(x - Lipschitz .* gradx, 0) - x;
         dgradx = WtW * dx;
@@ -294,7 +292,7 @@ function [x, iter, gradx] = SNMPBB_(x0, WtW, WtV, iterMax, iter_Min, tol, V_in, 
         x = x + dx;
         fn = fn + delta + 0.5 * dQd;
         gradx = gradx + dgradx;
-        
+
         % nonmonotone search preparation
         func(iter) = fn;
         if iter == 1
@@ -302,7 +300,7 @@ function [x, iter, gradx] = SNMPBB_(x0, WtW, WtV, iterMax, iter_Min, tol, V_in, 
         else
             S(iter) = fn + eta * (S(iter-1) - fn);
         end
-        
+
         dx = max(x - lambda_bb .* gradx, 0) - x;
         dgradx = WtW * dx;
         if graph_reg_local > 0
@@ -312,12 +310,12 @@ function [x, iter, gradx] = SNMPBB_(x0, WtW, WtV, iterMax, iter_Min, tol, V_in, 
         dQd = dx(:)' * dgradx(:);
         fn = func(iter) + delta + 0.5 * dQd;
         alpha = 1;
-        while (fn > S(iter) + alpha * gamma * (delta))
+        while (fn > S(iter) + alpha * gamma * (delta))% && (alpha > 1e-5)
             alpha = rho * alpha;
             fn = func(iter) + alpha * delta + 0.5 * alpha^2 * dQd;
         end
         x = x + s .* alpha .* dx;
-        
+
         sty = dQd;
         gradx = gradx + alpha .* dgradx;
         if sty > 0
@@ -326,7 +324,7 @@ function [x, iter, gradx] = SNMPBB_(x0, WtW, WtV, iterMax, iter_Min, tol, V_in, 
         else
             lambda_bb = lamax;
         end
-        
+
         if iter == 1
             eta_old = eta;
             eta = eta / 2;
@@ -336,7 +334,7 @@ function [x, iter, gradx] = SNMPBB_(x0, WtW, WtV, iterMax, iter_Min, tol, V_in, 
             eta = tmp;
         end
     end % for iter
-    
+
     if iter == iterMax
         fprintf('Max iter in QRPBB\n');
     end

@@ -46,14 +46,14 @@ end
 % Main loop
 iter = 0;
 init_tic = tic;
-while iter <= maxiter && toc(init_tic) < 10
+while iter <= maxiter && toc(init_tic) < 12
     qqqq = tic;
     
     UU = U'*U;
     XU = X*U;
     UUt = U*U';
     grad = U*UU - XU;
-    step = (1 / (norm(X - UUt, 'fro') + 2*norm(UU, 'fro')))*6;
+    step = 1 / (norm(X - UUt, 'fro') + 2*norm(UU, 'fro'));
     U = max(U - step * grad, 0);
     
     output.time(iter+2) = toc(qqqq);

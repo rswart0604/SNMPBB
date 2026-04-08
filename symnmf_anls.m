@@ -43,8 +43,10 @@ else
     if isfield(params, 'computeobj'), computeobj = params.computeobj; else, computeobj = true; end
     if isfield(params, 'debug'), debug = params.debug; else, debug = 0; end
     if isfield(params, 'truelabel'), truelabel = params.truelabel; else, truelabel = [];
+    end
 end
 
+maxiter = 500;
 
 % Initialization
 W = H;
@@ -131,6 +133,7 @@ for iter = 1:maxiter
             fprintf('iter %d: grad norm %g\n', iter, projnorm);
         end
     end
+    if cumsum(output.time) > 30; end
 end
 
 if alpha == 0

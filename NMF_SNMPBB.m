@@ -206,7 +206,7 @@ for iter=1:iterMax,
     dQd = dx(:)'*dgradx(:);
     fn = func(iter) + delta + 0.5*dQd;
     alpha=1;
-    while (fn > S(iter) + alpha*gamma*(delta)) || alpha > 0
+    while (fn > S(iter) + alpha*gamma*(delta)) && (alpha > 1e-5)
         % Use Backtracking Line Search
         alpha=rho*alpha;
         fn = func(iter)+alpha*delta+0.5*alpha^2*dQd;
