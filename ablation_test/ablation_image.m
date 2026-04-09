@@ -1,11 +1,26 @@
-[cdata, ~, alphadata] = imread("/Users/ryanswart/Projects/SNMPBB/ablation_test/painting.png");
+% [cdata, ~, alphadata] = imread("/Users/ryanswart/Projects/SNMPBB/ablation_test/painting.png");
+% [cdata, ~, alphadata] = imread("/Users/ryanswart/Projects/SNMPBB/ablation_test/painting2.jpg");
+[cdata, ~, alphadata] = imread("/Users/ryanswart/Projects/SNMPBB/ablation_test/largeimage.png");
 painting = double(cdata);
-painting = painting(1:816,1:816,:);
-cdata = cdata(1:816,1:816,:);
+
+% largeimage
+painting = painting(1:2000,1:2000,:);
+cdata = cdata(1:2000,1:2000,:);
+
+
+% painting2
+% painting = painting(1:1154,1:1154,:);
+% cdata = cdata(1:1154,1:1154,:);
+
+% painting
+% painting = painting(1:816,1:816,:);
+% cdata = cdata(1:816,1:816,:);
 r = 25;
 
 % 4000/5000 works well
-sym_weight = 5000;
+% did r=200 for the paintings
+% and r=500 for the largeimage
+sym_weight = 500;
 
 painting_one = painting(:,:,1);
 painting_one = tril(painting_one) + triu(painting_one', 1);
@@ -36,5 +51,5 @@ figure(3); plot(output1.total_time, output1.relres); hold on; plot(output_anls1.
 figure(4); plot(output2.total_time, output2.relres); hold on; plot(output_anls2.total_time, output_anls2.relres); hold off
 figure(5); plot(output3.total_time, output3.relres); hold on; plot(output_anls3.total_time, output_anls3.relres); hold off
 
-% original_image = uint8(cat(3,painting_one,painting_2,painting_3));
-% figure(6); imshow(original_image)
+original_image = uint8(cat(3,painting_one,painting_2,painting_3));
+figure(6); imshow(original_image)

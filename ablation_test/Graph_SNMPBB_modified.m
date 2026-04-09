@@ -27,6 +27,7 @@ end
 options.bb = true;
 options.nonmonotone = true;
 options.second_descent_step = true;
+options.s = false;
 
 sym_weight = 0; graph_reg = 0;
 
@@ -57,6 +58,7 @@ for i = 1:2:length(varargin)
         case "SECOND_DESCENT_STEP",    options.second_descent_step = val;
         case "BB", options.bb = val;
         case "NONMONOTONE", options.nonmonotone = val;
+        case "S", options.s = val;
         otherwise
             error('Unrecognized option: %s', varargin{i});
     end
@@ -149,7 +151,7 @@ t_hist(1) = toc(start_tic);
 res_tic = tic;
 normX = norm(V_original, 'fro');
 XH = V_original*H';
-cres = efficient_GetRes(normX,V_original,H',H','XH',XH);
+cres = efficient_GetRes(normX,V_original,W,H','XH',XH);
 e_hist(1) = cres;
 relres_time_hist(1) = toc(res_tic);
 
@@ -197,7 +199,7 @@ for iter = 1:MaxIter
     end
     % normX = norm(V, 'fro');
     XH = V_original*H';
-    cres = efficient_GetRes(normX,V_original,H',H','XH',XH);
+    cres = efficient_GetRes(normX,V_original,W',H','XH',XH);
     % if options.second_descent_step == 0
     %     disp(cres)
     % end
@@ -239,7 +241,11 @@ if isempty(acc), acc = 0; end
 function [x, iter, gradx] = SNMPBB_(x0, WtW, WtV, iterMax, iter_Min, tol, graph_reg_local, L_local, options)
     % SNMPBB: Quadratic regularization projected Barzilai--Borwein method:
     %   min 1/2 * <x, WtW*x> - <x, WtV> + (graph_reg/2) tr(x*L*x') subject to x>=0
-    s = 1.4;
+    if options.s
+        s = options.s;
+    else
+        s = 1;
+    end
     eta = 0.75;
     lamax = 1e5; lamin = 1e-20;
     gamma = 1e-4;

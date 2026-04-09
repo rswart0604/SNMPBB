@@ -11,12 +11,12 @@
 %   s.fea, s.gnd, s.data, s.label, s.Y, etc. (whatever the .mat contains)
 % =========================================================================
 dataset_configs = {
-    'ORL.mat',         40,  2.5,   @(s) deal(s.data, s.label);
+    'ORL.mat',         40,  2.5,   @(s) deal(s.data, s.label);  % 400
     % 'ORL.mat', 40, 2.5, @(s) preprocess_orl(s)
-    'COIL20.mat',      20,  2.5,   @(s) deal(s.X,  s.Y);
-    'Isolet1.mat',     26,  10,   @(s) deal(s.fea,  s.gnd);
-    '2k2k.mat',        10,  10,   @(s) deal(s.fea,  s.gnd);
-    'Reuters21578.mat',20,  10,   @(s) top20_preprocess(s.fea, s.gnd);
+    'COIL20.mat',      20,  2.5,   @(s) deal(s.X,  s.Y);  % 1440
+    'Isolet1.mat',     26,  10,   @(s) deal(s.fea,  s.gnd);  % 1560
+    '2k2k.mat',        10,  10,   @(s) deal(s.fea,  s.gnd);  % 4000
+    'Reuters21578.mat',20,  10,   @(s) top20_preprocess(s.fea, s.gnd);  % 8293
     % 'TDT2_all.mat',    20,  10,   @(s) top20_preprocess(s.fea, s.gnd);
 };
 
@@ -35,7 +35,7 @@ num_datasets = size(dataset_configs, 1);
 num_methods  = size(method_configs,  1);
 method_names = method_configs(:, 1);
 
-num_runs = 3;
+num_runs = 10;
 
 % =========================================================================
 % Storage for all plot data, indexed by dataset
@@ -59,6 +59,7 @@ for d = 1:num_datasets
     s = load(filename);
     [X, gnd] = preprocess_fn(s);
     [m, ~] = size(X);
+    
 
     % --- Initialize per-dataset result storage ---
     results = struct();
@@ -90,6 +91,8 @@ for d = 1:num_datasets
             params.Hinit     = W0;
             params.Winit     = H0;
             params.alg       = alg_param;
+            params.kk = 2*floor(log2(m)/log(2)) + 1;
+            params.s = 1;
 
             % Merge extra params if alg is modified
             if strcmp(alg_param, 'modified_graph_snmpbb')
@@ -181,18 +184,18 @@ for d = 1:num_datasets
     hold off;
 
     % --- Relative Residual ---
-    figure('Name', [pd.dataset_name ' - Residual']); hold on;
-    for i = 1:num_methods
-        mn = method_names{i};
-        plot(t_plot, pd.(mn).mean_relres, ...
-            'Color', method_configs{i,4}, 'LineWidth', 2, 'DisplayName', method_configs{i,3});
-    end
-    ax = gca; ax.FontSize = 14; ax.TickLabelInterpreter = 'latex';
-    xlabel('$\textnormal{Time (s)}$',           'Interpreter', 'Latex', 'FontSize', 20);
-    ylabel('$\textnormal{Relative Residual}$',  'Interpreter', 'Latex', 'FontSize', 20);
-    title(name, 'FontSize', 16);
-    lgd = legend('Location', 'best'); lgd.FontSize = 16; lgd.Interpreter = 'latex';
-    hold off;
+    % figure('Name', [pd.dataset_name ' - Residual']); hold on;
+    % for i = 1:num_methods
+    %     mn = method_names{i};
+    %     plot(t_plot, pd.(mn).mean_relres, ...
+    %         'Color', method_configs{i,4}, 'LineWidth', 2, 'DisplayName', method_configs{i,3});
+    % end
+    % ax = gca; ax.FontSize = 14; ax.TickLabelInterpreter = 'latex';
+    % xlabel('$\textnormal{Time (s)}$',           'Interpreter', 'Latex', 'FontSize', 20);
+    % ylabel('$\textnormal{Relative Residual}$',  'Interpreter', 'Latex', 'FontSize', 20);
+    % title(name, 'FontSize', 16);
+    % lgd = legend('Location', 'best'); lgd.FontSize = 16; lgd.Interpreter = 'latex';
+    % hold off;
 end
 
 fprintf('\nAll done! Results stored in plot_data{1..%d}.\n', num_datasets);

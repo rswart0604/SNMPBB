@@ -23,6 +23,7 @@ if ~isfield(options,'Winit'),           options.Winit = []; end
 if ~isfield(options,'alg'),             options.alg = 'anls'; end
 if ~isfield(options,'truelabel'),       options.truelabel = []; end
 if ~isfield(options,'second_descent_step'),       options.second_descent_step = true; end
+if ~isfield(options,'s'),       options.s = false; end
 if ~isfield(options,'bb'),       options.bb = true; end
 if ~isfield(options,'nonmonotone'),       options.nonmonotone = true; end
 
@@ -105,7 +106,7 @@ for i = 1:options.rep
         [H,~,output,acc] = Graph_SNMPBB_modified(A,k,'truelabel',params.truelabel,'do_preprocess',false, ...
             'W_INIT',params.Hinit,'H_INIT',params.Winit, ...
             'do_preprocess', false,'second_descent_step',options.second_descent_step, 'bb', options.bb, ...
-            'nonmonotone', options.nonmonotone);
+            'nonmonotone', options.nonmonotone, 's', options.s);
 
     elseif strcmp(options.alg,'modified_pgd')
         % use the higher scaling
