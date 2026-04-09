@@ -114,7 +114,7 @@ for iter=1:MaxIter
 
     % residual
     XH = V*H';
-    cres = efficient_GetRes(normX,V,H',H','XH',XH);
+    cres = efficient_GetRes(normX,V,W',H','XH',XH);
     relres_hist(end+1) = cres;
     
     % clustering accuracy

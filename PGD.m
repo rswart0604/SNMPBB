@@ -2,7 +2,8 @@ function [U,output,acc] = PGD(X,r,varargin)
 
 [m,~] = size(X);
 U = 2 * full(sqrt(mean(mean(X)) / r)) * rand(m, r);
-maxiter = 300;
+maxiter = 10000;
+tol = 1e-5;
 truelabel = [];
 
 if (rem(length(varargin),2)==1)
@@ -13,6 +14,7 @@ else
             case 'MAX_ITER',    maxiter=varargin{i+1};
             case 'U_INIT',      U=varargin{i+1};
             case 'TRUELABEL',   truelabel=varargin{i+1};
+            case 'TOL',         tol=varargin{i+1};
             otherwise
                 error(['Unrecognized option: ',varargin{i}]);
         end
@@ -46,7 +48,7 @@ end
 % Main loop
 iter = 0;
 init_tic = tic;
-while iter <= maxiter && toc(init_tic) < 12
+while iter <= maxiter && toc(init_tic) < 10
     qqqq = tic;
     
     UU = U'*U;
@@ -69,11 +71,11 @@ while iter <= maxiter && toc(init_tic) < 12
     end
     output.relres_time(iter+2) = toc(res_time_start);
 
-%     if iter > 1
-%         if (output.relres(iter+2)-output.relres(iter+1))/output.relres(iter+1) < 1e-16
-%             break
-%         end
-%     end
+    if iter > 1
+        if grad < tol
+            break
+        end
+    end
 
     iter = iter + 1;
 end

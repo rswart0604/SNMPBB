@@ -159,7 +159,7 @@ for iter = 1:maxiter
     relres_tic = tic;
     XH = A*H;
     cres = efficient_GetRes(normA,A,H,H,'XH',XH);
-    output.relres(end+1) = cres;
+    output.relres(end+) = cres;
     if ~isempty(truelabel)
         [~, est_label0] = max(H,[],2);
         tempacc = ClusteringMeasure(truelabel, est_label0);
