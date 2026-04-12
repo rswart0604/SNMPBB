@@ -1,6 +1,7 @@
 T_large.mat
 WebOfScience/
 ssget/
-suitesparse_test/
+test_suitesparse/*
+!test_suitesparse/*.m
 data/
 plots/
