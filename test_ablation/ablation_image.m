@@ -1,11 +1,11 @@
-% [cdata, ~, alphadata] = imread("/Users/ryanswart/Projects/SNMPBB/ablation_test/painting.png");
+[cdata, ~, alphadata] = imread("/Users/ryanswart/Projects/SNMPBB/ablation_test/painting.png");
 % [cdata, ~, alphadata] = imread("/Users/ryanswart/Projects/SNMPBB/ablation_test/painting2.jpg");
-[cdata, ~, alphadata] = imread("/Users/ryanswart/Projects/SNMPBB/ablation_test/largeimage.png");
+% [cdata, ~, alphadata] = imread("/Users/ryanswart/Projects/SNMPBB/ablation_test/largeimage.png");
 painting = double(cdata);
 
 % largeimage
-painting = painting(1:2000,1:2000,:);
-cdata = cdata(1:2000,1:2000,:);
+% painting = painting(1:2000,1:2000,:);
+% cdata = cdata(1:2000,1:2000,:);
 
 
 % painting2
@@ -13,29 +13,27 @@ cdata = cdata(1:2000,1:2000,:);
 % cdata = cdata(1:1154,1:1154,:);
 
 % painting
-% painting = painting(1:816,1:816,:);
-% cdata = cdata(1:816,1:816,:);
-r = 25;
-
-% 4000/5000 works well
-% did r=200 for the paintings
-% and r=500 for the largeimage
-sym_weight = 500;
+painting = painting(1:816,1:816,:);
+cdata = cdata(1:816,1:816,:);
+r = 50;
 
 painting_one = painting(:,:,1);
 painting_one = tril(painting_one) + triu(painting_one', 1);
-[W1, H1, output1, ~] = Graph_SNMPBB_modified(painting_one, r, 'sym_weight', sym_weight,'verbose', 1, 'graph_reg', -1, 'do_preprocess',false);
+% sym_weight = 2 * norm(painting_one, 'fro') / sqrt(2000*25);
+[W1, H1, output1, ~] = Graph_SNMPBB_modified(painting_one, r,'verbose', 1, 'graph_reg', -1, 'do_preprocess',false);
 [H1_, output_anls1, acc_anls] = symnmf_anls(painting_one, r);
 
 painting_2 = painting(:,:,2);
 painting_2 = tril(painting_2) + triu(painting_2', 1);
-[W2, H2, output2, ~] = Graph_SNMPBB_modified(painting_2, r, 'sym_weight', sym_weight,'verbose', 1, 'graph_reg', -1, 'do_preprocess',false);
+% sym_weight = 2 * norm(painting_2, 'fro') / sqrt(2000*25);
+[W2, H2, output2, ~] = Graph_SNMPBB_modified(painting_2, r,'verbose', 1, 'graph_reg', -1, 'do_preprocess',false);
 [H2_, output_anls2, acc_anls] = symnmf_anls(painting_2, r);
 
 
 painting_3 = painting(:,:,3);
 painting_3 = tril(painting_3) + triu(painting_3', 1);
-[W3, H3, output3, ~] = Graph_SNMPBB_modified(painting_3, r, 'sym_weight', sym_weight,'verbose', 1, 'graph_reg', -1, 'do_preprocess',false);
+sym_weight = 2 * norm(painting_3, 'fro') / sqrt(2000*25);
+[W3, H3, output3, ~] = Graph_SNMPBB_modified(painting_3, r,'verbose', 1, 'graph_reg', -1, 'do_preprocess',false);
 [H3_, output_anls3, acc_anls] = symnmf_anls(painting_3, r);
 
 figure(1);

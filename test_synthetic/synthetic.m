@@ -1,7 +1,7 @@
 clear;clc;
 
-m = 1000;
-r = 30;
+m = 500;
+r = 15;
 
 for i=1:1
     W_sketch = max(randn(m,r), 0);
@@ -14,7 +14,8 @@ for i=1:1
     params.Hinit = W0;
     [~,output_ANLS,~] = symnmf_anls(V,r,params);
     [~,output_Newton,~] = symnmf_newton(V,r,params);
-    [~,output_PGD,~] = PGD(V,r);
+    % [~,output_PGD,~] = PGD(V,r);
+    [~,~,output_HALS,~] = symHALS(V,r,'U_INIT',W0,'V_INIT',H0);
 
 
 
@@ -24,5 +25,6 @@ plot(output_SNMPBB.total_time, output_SNMPBB.relres); hold on;
 plot(output_ANLS.total_time, output_ANLS.relres);
 plot(output_Newton.total_time, output_Newton.relres);
 plot(output_PGD.total_time, output_PGD.relres);
-legend("SNMPBB", "ANLS", "Newton", "PGD");
+plot(output_HALS.total_time, output_HALS.relres);
+legend("SNMPBB", "ANLS", "Newton", "PGD", "HALS");
 hold off
